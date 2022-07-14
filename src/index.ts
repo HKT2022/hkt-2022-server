@@ -22,8 +22,14 @@ const transporter = nodemailer.createTransport({
 async function main() {
     const app = new Koa();
     const server = http.createServer(app.callback());
-    
-    app.use(cors({ origin: CLIENT_ADDR, credentials: true }));
+
+    app.use(async (ctx, next) => {
+        ctx.set('Access-Control-Allow-Origin', '*');
+        ctx.set('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS');
+        await next();
+    });
+    // app.use(cors());
+    // app.use(cors({ origin: CLIENT_ADDR, credentials: true }));
 
     const mysqlDataSource = await (await getDataSource()).initialize();
 

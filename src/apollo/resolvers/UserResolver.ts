@@ -74,7 +74,8 @@ export default class UserResolver {
     @Mutation(() => InitJWT)
     async loginLocal(
         @Arg('email') email: string,
-        @Arg('password') password: string
+        @Arg('password') password: string,
+        @Arg('rememberMe') rememberMe: boolean
     ) {
         const user = await this.localUserRepository.findOne({ where: { email } });
         
@@ -84,11 +85,12 @@ export default class UserResolver {
         if(!await bcrypt.compare(password, user.password))
             throw new ApolloError('User not found or password not match');
 
-        return getUserJwtById(user.id);
+        return getUserJwtById(user.id, rememberMe);
     }
     @Mutation(() => InitJWT)
     async loginGoogle(
-        @Arg('idToken') idToken: string
+        @Arg('idToken') idToken: string,
+        @Arg('rememberMe') rememberMe: boolean
     ) {
         const tokenPayload = await this.googleAuth.verifyIdToken(idToken);
 
@@ -98,14 +100,14 @@ export default class UserResolver {
 
         const user = await this.googleUserRepository.findOne({ where: { sub: tokenPayload.sub } });
         if(user) {
-            return getUserJwtById(user.id);
+            return getUserJwtById(user.id, rememberMe);
         } else {
             const user = new GoogleUser();
             user.sub = tokenPayload.sub;
             user.username = tokenPayload.name ?? '-';
             await user.save();
 
-            return getUserJwtById(user.id);
+            return getUserJwtById(user.id, rememberMe);
         }
     }
     @Mutation(() => String)

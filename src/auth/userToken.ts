@@ -27,17 +27,21 @@ export function getUserRefreshToken(jwtToken: string) {
     return jwt.verify(jwtToken, JWT_REFRESH_TOKEN_SECRET) as UserRefreshToken;
 }
 
-export function getUserRefreshJwt(userToken: UserRefreshToken) {
+export function getUserRefreshJwt(userToken: UserRefreshToken, isNotWillExpire: boolean = false) {
     const user: UserRefreshToken = {
         id: userToken.id
     };
-    return jwt.sign(user, JWT_REFRESH_TOKEN_SECRET, { expiresIn: JWT_REFRESH_TOKEN_EXPIRES_IN });
+
+    if(isNotWillExpire)
+        return jwt.sign(user, JWT_REFRESH_TOKEN_SECRET);
+    else
+        return jwt.sign(user, JWT_REFRESH_TOKEN_SECRET, { expiresIn: JWT_REFRESH_TOKEN_EXPIRES_IN });
 }
 
 
-export function getUserJwtById(id: string) {
+export function getUserJwtById(id: string, isNotWillExpire: boolean = false) {
     return {
         accessToken: getUserAccessJwt({ id }),
-        refreshToken: getUserRefreshJwt({ id })
+        refreshToken: getUserRefreshJwt({ id }, isNotWillExpire)
     };
 }
