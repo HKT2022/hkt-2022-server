@@ -135,6 +135,26 @@ export default class UserResolver {
 
         return user;
     }
+    @Authorized()
+    @Mutation(() => User)
+    async changePassword(
+        @Arg('oldPassword') oldPassword: string,
+        @Arg('newPassword') newPassword: string,
+        @Ctx() ctx: ApolloContext
+    ) {
+        const user = (await this.localUserRepository.findOne({ where: { id: ctx.userToken!.id }}));
+
+        if(!user)
+            throw new ApolloError('User not found');
+
+        if(!await bcrypt.compare(oldPassword, user.password))
+            throw new ApolloError('Old password not match');
+
+        user.password = await hashPassword(newPassword);
+        await user.save();
+
+        return user;
+    }
     
     @Mutation(() => User)
     async resetPassword(
