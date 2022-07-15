@@ -24,5 +24,8 @@ module.exports = {
   plugins: [
     new NodemonPlugin()
   ],
+  devServer: {
+    port: 7000
+  },
   externals: [nodeExternals()]
 };

@@ -1,6 +1,6 @@
 
 
-export const PORT = 3000;
+export const PORT = 49800;
 export const CLIENT_ADDR = 'http://localhost:3000';
 
 export const EMAIL_VERIFY_TIMEOUT = 30 * 60 * 1000;
@@ -13,3 +13,5 @@ export const JWT_REFRESH_TOKEN_EXPIRES_IN = '7 days';
 export const JWT_ACCESS_TOKEN_EXPIRES_IN = '6h';
 
 export const USER_CHARACTER_MAX_HP = 100;
+export const COMPLETE_TODO_REWARD_HP = 5;
+export const COMPLETE_TODO_REWARD_SCORE = 10;

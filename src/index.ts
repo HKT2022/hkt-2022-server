@@ -4,7 +4,7 @@ import { PORT, CLIENT_ADDR, DEVELOPMENT } from './const';
 import http from 'http';
 import Koa from 'koa';
 import { getDataSource } from './db/mysql';
-import cors from '@koa/cors';
+// import cors from '@koa/cors';
 import { applyWebSocketServer, getApolloServer, getSchema } from './apollo/apolloServer';
 import { addRepositories } from './db/repositories';
 import { ContainerInstance } from 'typedi';
@@ -15,6 +15,10 @@ import nodemailer from 'nodemailer';
 import { migrate } from './db/migrate';
 import { TodoService } from './services/TodoService';
 import koaBody from 'koa-body';
+import express from 'express';
+import cors from 'cors';
+import { PubSub } from 'graphql-subscriptions';
+import { PubSubService } from './services/PubSubService';
 
 const transporter = nodemailer.createTransport({
     host: SMTP_HOST,
@@ -23,24 +27,10 @@ const transporter = nodemailer.createTransport({
 });
 
 async function main() {
-    const app = new Koa();
-    const server = http.createServer(app.callback());
+    const app = express();
+    const server = http.createServer(app);
 
-
-    app.use(async (ctx, next) => {
-        console.log(`${ctx.method} ${ctx.url}`);
-        await next();
-    });
-
-    // app.use(async (ctx, next) => {
-    //     ctx.set('Access-Control-Allow-Origin', '*');
-    //     ctx.set('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS');
-    //     await next();
-    // });
-    app.use(cors({ origin: '*' }));
-    app.use(koaBody({ multipart: true }));
-    // app.use(cors({ origin: CLIENT_ADDR, credentials: true }));
-
+    app.use(cors({ origin: '*', credentials: true }));
 
     const mysqlDataSource = await (await getDataSource()).initialize();
 
@@ -48,11 +38,13 @@ async function main() {
     addRepositories(container, mysqlDataSource);
     container.set(GoogleAuth, new GoogleAuth(GOOGLE_OAUTH_CLIENT_ID));
     container.set(EmailService, new EmailService(transporter));
+    const pubSub = new PubSubService();
+    container.set(PubSubService, pubSub);
     container.set(TodoService, container.get(TodoService));
 
     await migrate();
     
-    const schema = await getSchema(container);
+    const schema = await getSchema(pubSub, container);
     const apolloServer = await getApolloServer(schema, DEVELOPMENT);
     await applyWebSocketServer(schema, server);
 

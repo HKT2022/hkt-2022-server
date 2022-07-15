@@ -1,10 +1,13 @@
 import { assignPartial } from "@lunuy/assign-partial";
 import { ApolloError } from "apollo-server-core";
-import { Arg, Authorized, Ctx, Int, Mutation, Query, Resolver } from "type-graphql";
+import { Arg, Authorized, Ctx, Int, Mutation, PubSub, PubSubEngine, Query, Resolver, Subscription } from "type-graphql";
 import { Service } from "typedi";
+import { COMPLETE_TODO_REWARD_HP, COMPLETE_TODO_REWARD_SCORE } from "../../const";
 import { TodoRepository, UserRepository } from "../../db/repositories";
 import { Todo, TodoInput, TodoUpdate } from "../../entities/Todo";
 import { ApolloContext } from "../apolloServer";
+import { UserCharacterState } from "../types/UserCharacterState";
+import { TOPIC_USER_CHARACTER_STATE } from "./UserCharacterResolver";
 
 
 @Service()
@@ -56,7 +59,8 @@ export class TodoResolver {
     async updateTodo(
         @Ctx() ctx: ApolloContext,
         @Arg("id", () => Int) id: number,
-        @Arg("todo", () => TodoUpdate) todoUpdate: TodoUpdate
+        @Arg("todo", () => TodoUpdate) todoUpdate: TodoUpdate,
+        @PubSub() pubSub: PubSubEngine
     ) {
         const todo = await this.todoRepository.findOne({ where: { id } });
         if (!todo) {
@@ -67,28 +71,22 @@ export class TodoResolver {
             throw new ApolloError("You are not allowed to update this todo");
         }
 
-        assignPartial(todo, todoUpdate, ["content", "priority", "completed"]);
-        await todo.save();
+        if(todo.completed && !todoUpdate.completed)
+            throw new ApolloError("No uncomplete ^^");
 
-        return todo;
-    }
+        if(!todo.completed && todoUpdate.completed) {
+            const user = await todo.user;
+            user.score = user.score += COMPLETE_TODO_REWARD_SCORE;
+            await user.save();
 
-    @Authorized()
-    @Mutation(() => Todo)
-    async completeTodo(
-        @Ctx() ctx: ApolloContext,
-        @Arg("id", () => Int) id: number
-    ) {
-        const todo = await this.todoRepository.findOne({ where: { id } });
-        if (!todo) {
-            throw new ApolloError("Todo not found");
+            const userCharacter = await user.character;
+            userCharacter.hp = Math.min(100, userCharacter.hp + COMPLETE_TODO_REWARD_HP);
+            await userCharacter.save();
+
+            await pubSub.publish(TOPIC_USER_CHARACTER_STATE(userCharacter.id), { hp: userCharacter.hp } as UserCharacterState);    
         }
         
-        if((await todo.user).id !== ctx.userToken!.id) {
-            throw new ApolloError("You are not allowed to complete this todo");
-        }
-
-        todo.completed = true;
+        assignPartial(todo, todoUpdate, ["content", "priority", "completed"]);
         await todo.save();
 
         return todo;

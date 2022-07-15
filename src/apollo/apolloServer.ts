@@ -1,11 +1,10 @@
 import { ApolloServerPluginLandingPageGraphQLPlayground, ApolloServerPluginLandingPageDisabled } from 'apollo-server-core';
-import { AuthChecker, buildSchema, ContainerType } from "type-graphql";
-import { ApolloServer } from 'apollo-server-koa';
+import { AuthChecker, buildSchema, ContainerType, PubSubEngine } from "type-graphql";
+import { ApolloServer, ExpressContext } from 'apollo-server-express';
 import { getUserAccessToken, UserAccessToken } from "../auth/userToken";
 import { Context } from 'graphql-ws';
 import { Extra, useServer } from 'graphql-ws/lib/use/ws';
 import { GraphQLSchema } from 'graphql';
-import Koa from 'koa';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import UserResolver from './resolvers/UserResolver';
@@ -18,6 +17,7 @@ import { TodoResolver } from './resolvers/TodoResolver';
 import { HKTResolver } from './resolvers/HKTResolver';
 import { UserCharacterResolver } from './resolvers/UserCharacterResolver';
 import RankingResolver from './resolvers/RankingResolver';
+import DayUpdateResolver from './resolvers/DayUpdateResolver';
 
 
 export interface ApolloContext {
@@ -38,14 +38,14 @@ const authChecker: AuthChecker<ApolloContext> = async (
     if(!loggedIn)
         return false;
     
-    return roles.every(async role => {
+    return roles.every(role => {
         return false;
     });
 };
 
-function httpContext({ ctx }: { ctx: Koa.ParameterizedContext }): ApolloContext {
+function httpContext({ req }: ExpressContext): ApolloContext {
 
-    const token = ctx.headers.authorization || '';
+    const token = req.headers.authorization || '';
 
     try {
         const userToken = getUserAccessToken(token);
@@ -66,7 +66,7 @@ function webSocketContext(ctx: Context<Extra & Partial<Record<PropertyKey, never
     }
 }
 
-export async function getSchema(container: ContainerType) {
+export async function getSchema(pubSub: PubSubEngine, container: ContainerType) {
     return await buildSchema({
         resolvers: [
             UserResolver,
@@ -74,10 +74,12 @@ export async function getSchema(container: ContainerType) {
             TodoResolver,
             HKTResolver,
             UserCharacterResolver,
-            RankingResolver
+            RankingResolver,
+            DayUpdateResolver
         ],
         authChecker,
-        container
+        container,
+        pubSub
     });
 }
 

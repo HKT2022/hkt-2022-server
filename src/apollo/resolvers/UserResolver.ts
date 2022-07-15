@@ -113,6 +113,10 @@ export default class UserResolver {
             user.username = tokenPayload.name ?? '-';
             await user.save();
 
+            const character = this.userCharacterRepository.create();
+            character.user = Promise.resolve(user);
+            await character.save();
+
             return getUserJwtById(user.id, rememberMe);
         }
     }
