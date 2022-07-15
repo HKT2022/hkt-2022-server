@@ -14,6 +14,10 @@ import { User } from '../entities/User';
 import { ContainerInstance } from 'typedi';
 import { repositories } from '../db/repositories';
 import EmailResolver from './resolvers/EmailResolver';
+import { TodoResolver } from './resolvers/TodoResolver';
+import { HKTResolver } from './resolvers/HKTResolver';
+import { UserCharacterResolver } from './resolvers/UserCharacterResolver';
+import RankingResolver from './resolvers/RankingResolver';
 
 
 export interface ApolloContext {
@@ -66,7 +70,11 @@ export async function getSchema(container: ContainerType) {
     return await buildSchema({
         resolvers: [
             UserResolver,
-            EmailResolver
+            EmailResolver,
+            TodoResolver,
+            HKTResolver,
+            UserCharacterResolver,
+            RankingResolver
         ],
         authChecker,
         container

@@ -1,5 +1,5 @@
 
-import { Mutation, Query, Resolver, Arg, ID, Authorized, Ctx } from 'type-graphql';
+import { Mutation, Query, Resolver, Arg, ID, Authorized, Ctx, FieldResolver, Root } from 'type-graphql';
 import { GoogleUser, LocalUser, LocalUserInput, User, UserUpdate } from '../../entities/User';
 import bcrypt from 'bcrypt';
 import { ApolloContext } from '../apolloServer';
@@ -7,23 +7,25 @@ import { getUserAccessJwt, getUserJwtById, getUserRefreshToken } from '../../aut
 import { ApolloError } from 'apollo-server-errors';
 import { assignPartial } from '@lunuy/assign-partial';
 import { Service } from 'typedi';
-import { GoogleUserRepository, LocalUserRepository, UserRepository } from '../../db/repositories';
+import { GoogleUserRepository, LocalUserRepository, UserCharacterRepository, UserRepository } from '../../db/repositories';
 import { GoogleAuth } from '../../auth/google';
 import { getEmailToken } from '../../auth/emailToken';
 import { InitJWT } from '../types/JWT';
+import { UserRanking } from '../types/UserRanking';
 
 
 async function hashPassword(password: string) {
     return await bcrypt.hash(password, await bcrypt.genSalt());
 }
 
-@Resolver()
+@Resolver(User)
 @Service()
 export default class UserResolver {
     constructor(
         private readonly userRepository: UserRepository,
         private readonly localUserRepository: LocalUserRepository,
         private readonly googleUserRepository: GoogleUserRepository,
+        private readonly userCharacterRepository: UserCharacterRepository,
         private readonly googleAuth: GoogleAuth
     ) {}
 
@@ -68,6 +70,10 @@ export default class UserResolver {
         user.email = email.email;
         user.password = await bcrypt.hash(userInput.password, await bcrypt.genSalt());
         await user.save();
+
+        const character = this.userCharacterRepository.create();
+        character.user = Promise.resolve(user);
+        await character.save();
 
         return user;
     }
@@ -173,5 +179,22 @@ export default class UserResolver {
         await user.save();
 
         return user;
+    }
+
+    @Authorized()
+    @FieldResolver(() => UserRanking)
+    async ranking(
+        @Root() user: User
+    ) {
+        const allRanking = await this.userRepository.find({
+            order: {
+                score: 'DESC'
+            }
+        });
+        const ranking = allRanking.findIndex(u => u.id === user.id);
+
+        return {
+            totalRanking: ranking
+        } as UserRanking;
     }
 }

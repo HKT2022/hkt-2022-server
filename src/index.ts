@@ -12,6 +12,8 @@ import { GOOGLE_OAUTH_CLIENT_ID, SMTP_HOST, SMTP_PORT, SMTP_SECURE } from './sec
 import { GoogleAuth } from './auth/google';
 import { EmailService } from './email/EmailService';
 import nodemailer from 'nodemailer';
+import { migrate } from './db/migrate';
+import { TodoService } from './services/TodoService';
 
 const transporter = nodemailer.createTransport({
     host: SMTP_HOST,
@@ -23,12 +25,12 @@ async function main() {
     const app = new Koa();
     const server = http.createServer(app.callback());
 
-    app.use(async (ctx, next) => {
-        ctx.set('Access-Control-Allow-Origin', '*');
-        ctx.set('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS');
-        await next();
-    });
-    // app.use(cors());
+    // app.use(async (ctx, next) => {
+    //     ctx.set('Access-Control-Allow-Origin', '*');
+    //     ctx.set('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS');
+    //     await next();
+    // });
+    app.use(cors({ origin: '*' }));
     // app.use(cors({ origin: CLIENT_ADDR, credentials: true }));
 
     const mysqlDataSource = await (await getDataSource()).initialize();
@@ -37,7 +39,10 @@ async function main() {
     addRepositories(container, mysqlDataSource);
     container.set(GoogleAuth, new GoogleAuth(GOOGLE_OAUTH_CLIENT_ID));
     container.set(EmailService, new EmailService(transporter));
+    container.set(TodoService, container.get(TodoService));
 
+    await migrate();
+    
     const schema = await getSchema(container);
     const apolloServer = await getApolloServer(schema, DEVELOPMENT);
     await applyWebSocketServer(schema, server);

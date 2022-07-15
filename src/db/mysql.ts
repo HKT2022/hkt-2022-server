@@ -1,6 +1,8 @@
 import { createConnection, DataSource } from "typeorm";
 import { EmailCheck } from "../entities/EmailCheck";
+import { Todo } from "../entities/Todo";
 import { GoogleUser, LocalUser, User } from "../entities/User";
+import { UserCharacter } from "../entities/UserCharacter";
 import { MYSQL_ADDR, MYSQL_DATABASE, MYSQL_PASSWORD, MYSQL_PORT, MYSQL_USERNAME } from "../secret";
 
 export async function getDataSource() {
@@ -13,7 +15,7 @@ export async function getDataSource() {
         database: MYSQL_DATABASE,
         synchronize: true,
         logging: true,
-        entities: [User, LocalUser, GoogleUser, EmailCheck],
+        entities: [User, LocalUser, GoogleUser, EmailCheck, Todo, UserCharacter],
         subscribers: [],
         migrations: [],
     });

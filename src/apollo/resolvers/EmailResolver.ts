@@ -8,6 +8,7 @@ import { nanoid } from 'nanoid';
 import { Service } from 'typedi';
 import { EmailService } from '../../email/EmailService';
 import { EmailCheckRepository } from '../../db/repositories';
+import { v4 as uuidv4 } from 'uuid';
 
 @Service()
 export default class EmailResolver {
@@ -29,19 +30,28 @@ export default class EmailResolver {
             throw new ApolloError('Failed to send email');
         }
 
-        const emailCheck = new EmailCheck();
-        emailCheck.verifyId = verifyId;
-        emailCheck.email = email;
-        emailCheck.verified = false;
-        await emailCheck.save();
-
-        setTimeout(async () => {
-            await emailCheck.remove();
-        }, EMAIL_VERIFY_TIMEOUT);
+        const emailCheck = await this.emailService.addEmailCheck(email, verifyId);
 
         return emailCheck;
     }
-    @Mutation(() => String)
+    @Mutation(() => Boolean)
+    async requestResetPasswordEmail(
+        @Arg('email') email: string
+    ) {
+        const verifyId = nanoid(10);
+        const emailCheckId = uuidv4();
+        
+        try {
+            await this.emailService.sendResetPasswordEmail(emailCheckId, verifyId, email);
+        } catch(e) {
+            throw new ApolloError('Failed to send email');
+        }
+
+        const emailCheck = await this.emailService.addEmailCheck(email, verifyId, emailCheckId);
+
+        return true;
+    }
+    @Mutation(() => Boolean)
     async verifyEmail(
         @Arg('verifyId') verifyId: string
     ) {
@@ -51,6 +61,8 @@ export default class EmailResolver {
             
         emailCheck.verified = true;
         await emailCheck.save();
+
+        return true;
     }
     @Mutation(() => String)
     async issueEmailToken(

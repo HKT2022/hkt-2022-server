@@ -1,7 +1,11 @@
 import { ContainerInstance } from "typedi";
 import { DataSource, Repository } from "typeorm";
 import { EmailCheck } from "../entities/EmailCheck";
+import { Todo } from "../entities/Todo";
+import { TodoGroup } from "../entities/TodoGroup";
+import { TodoGroupUser } from "../entities/TodoGroupUser";
 import { GoogleUser, LocalUser, User } from "../entities/User";
+import { UserCharacter } from "../entities/UserCharacter";
 
 
 // Repository<T> 타입으로는 DI를 사용할 수 없으므로, 각각의 T에 대한 Repository class를 만들어 DI가 가능하도록 한다.
@@ -21,8 +25,29 @@ export class GoogleUserRepository extends Repository<GoogleUser> {
 export class EmailCheckRepository extends Repository<EmailCheck> {
     static Entity = EmailCheck;
 }
+export class TodoGroupRepository extends Repository<TodoGroup> {
+    static Entity = TodoGroup;
+}
+export class TodoGroupUserRepository extends Repository<TodoGroupUser> {
+    static Entity = TodoGroupUser;
+}
+export class TodoRepository extends Repository<Todo> {
+    static Entity = Todo;
+}
+export class UserCharacterRepository extends Repository<UserCharacter> {
+    static Entity = UserCharacter;
+}
 
-export const repositories = [UserRepository, LocalUserRepository, GoogleUserRepository, EmailCheckRepository];
+export const repositories = [
+    UserRepository,
+    LocalUserRepository,
+    GoogleUserRepository,
+    EmailCheckRepository,
+    TodoGroupRepository, 
+    TodoGroupUserRepository,
+    TodoRepository,
+    UserCharacterRepository
+];
 
 
 export function addRepositories(containerInstance: ContainerInstance, dataSource: DataSource) {

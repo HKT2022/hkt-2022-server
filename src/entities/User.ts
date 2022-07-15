@@ -1,7 +1,10 @@
 
 import { IsAlphanumeric, Length, Matches, IsEmail } from 'class-validator';
-import { ObjectType, Field, InputType } from 'type-graphql';
-import { Entity, Column, BaseEntity, PrimaryColumn, OneToMany, TableInheritance, PrimaryGeneratedColumn, ChildEntity, CreateDateColumn } from 'typeorm';
+import { ObjectType, Field, InputType, Int } from 'type-graphql';
+import { Entity, Column, BaseEntity, PrimaryColumn, OneToMany, TableInheritance, PrimaryGeneratedColumn, ChildEntity, CreateDateColumn, OneToOne, JoinColumn } from 'typeorm';
+import { Todo } from './Todo';
+import { TodoGroup } from './TodoGroup';
+import { UserCharacter } from './UserCharacter';
 
 
 @ObjectType()
@@ -19,6 +22,26 @@ export class User extends BaseEntity {
     @Field()
     @CreateDateColumn()
     createdAt!: Date;
+
+    @Field(() => Int)
+    @Column({ default: 0 })
+    deathCount!: number;
+
+    @Field()
+    @Column({ default: 0 })
+    score!: number;
+
+    @Field(() => UserCharacter)
+    @OneToOne(() => UserCharacter, userCharacter => userCharacter.user)
+    @JoinColumn()
+    character!: Promise<UserCharacter>;
+
+    // @Field(() => TodoGroup)
+    // todoGroup!: Promise<TodoGroup>;
+
+    // @Field(() => [Todo])
+    @OneToMany(() => Todo, todo => todo.user)
+    todos!: Promise<Todo[]>;
 }
 
 @ObjectType()

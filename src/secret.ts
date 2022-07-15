@@ -6,7 +6,7 @@ export const MYSQL_USERNAME = 'root';
 export const MYSQL_PASSWORD = 'fuawb.cJAIO.o619eD8.X45.zPwov333fwe';
 export const MYSQL_DATABASE = 'svc';
 
-export const SMTP_HOST = '192.168.0.3';
+export const SMTP_HOST = '192.168.0.252';
 export const SMTP_PORT = 25;
 export const SMTP_SECURE = false;
 
