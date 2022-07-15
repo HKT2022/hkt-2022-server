@@ -8,7 +8,7 @@ import { TodoRepository, UserRepository } from '../db/repositories';
 
 const USER_CHARACTER_HP_DAMAGE_RATE = 5;
 const USER_SCORE_DECREASE_RATE = 5;
-const USER_PERFECT_DAY_SCORE = 50;
+const USER_PERFECT_DAY_SCORE = 20;
 
 
 @Service()

@@ -14,7 +14,7 @@ export async function getDataSource() {
         password: MYSQL_PASSWORD,
         database: MYSQL_DATABASE,
         synchronize: true,
-        logging: true,
+        logging: false,
         entities: [User, LocalUser, GoogleUser, EmailCheck, Todo, UserCharacter],
         subscribers: [],
         migrations: [],

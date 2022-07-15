@@ -14,6 +14,7 @@ import { EmailService } from './email/EmailService';
 import nodemailer from 'nodemailer';
 import { migrate } from './db/migrate';
 import { TodoService } from './services/TodoService';
+import koaBody from 'koa-body';
 
 const transporter = nodemailer.createTransport({
     host: SMTP_HOST,
@@ -25,13 +26,21 @@ async function main() {
     const app = new Koa();
     const server = http.createServer(app.callback());
 
+
+    app.use(async (ctx, next) => {
+        console.log(`${ctx.method} ${ctx.url}`);
+        await next();
+    });
+
     // app.use(async (ctx, next) => {
     //     ctx.set('Access-Control-Allow-Origin', '*');
     //     ctx.set('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS');
     //     await next();
     // });
     app.use(cors({ origin: '*' }));
+    app.use(koaBody({ multipart: true }));
     // app.use(cors({ origin: CLIENT_ADDR, credentials: true }));
+
 
     const mysqlDataSource = await (await getDataSource()).initialize();
 
